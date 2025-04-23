@@ -115,8 +115,8 @@ st.markdown(
 
 # ==================== 模型管理 ====================
 MODEL_PATHS = {
+     "高精模型": "./pt/CBAM2_DSConv2D_3_UIoU_200epochs.onnx",
     "标准模型": "./pt/CBAM2_DSConv2D_3_UIoU.pt",
-    "高精模型": "./pt/CBAM2_DSConv2D_3_UIoU_200epochs.pt",
     "轻量模型": "./pt/DSConv2D_3_aug.pt",
 }
 
