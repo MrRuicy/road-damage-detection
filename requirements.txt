@@ -1,0 +1,11 @@
+streamlit>=1.25.0
+ultralytics>=8.0.20
+opencv-python-headless>=4.5.5
+pillow>=9.5.0
+numpy>=1.22.0
+pandas>=1.4.0
+matplotlib>=3.5.0
+seaborn>=0.11.2
+psutil>=5.9.0
+gputil>=1.4.0
+reportlab>=3.6.0
