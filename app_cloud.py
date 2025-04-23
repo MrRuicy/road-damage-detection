@@ -25,7 +25,7 @@ import hashlib
 
 # ==================== 全局配置 ====================
 # 设置中文字体
-rcParams["font.family"] = ["SimHei"]
+# rcParams["font.family"] = ["SimHei"]
 rcParams["axes.unicode_minus"] = False
 
 # 页面配置
