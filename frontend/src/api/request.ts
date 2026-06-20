@@ -3,8 +3,11 @@ import type { AxiosInstance, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 
 // 创建 axios 实例
+// baseURL 使用相对路径（空），前端与 API 同源：
+// - 开发模式：请求 /api/* 经 Vite 代理转发到后端 8000
+// - 单端口/容器模式：请求 /api/* 相对当前域名（如创空间域名），与后端同源
 const service: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '',
   timeout: 60000,
   headers: {
     'Content-Type': 'application/json'
