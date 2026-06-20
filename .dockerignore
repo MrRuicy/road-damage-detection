@@ -1,0 +1,44 @@
+# ===== 构建上下文排除（减小镜像、加速构建）=====
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+.venv/
+venv/
+env/
+
+# 前端依赖与本地构建（容器内会重新 npm ci + build）
+frontend/node_modules/
+frontend/dist/
+
+# 运行时产物（容器内运行时生成，不应打进镜像）
+backend/data/
+backend/road_damage.db
+backend/static/results/
+backend/uploads/
+*.db
+*.sqlite3
+
+# 数据集（训练数据，体积大，运行不需要）
+dataset/
+
+# 旧版 Streamlit（容器只跑 v2）
+legacy_streamlit/
+
+# 模型评估产物
+runs/
+
+# Git 与 IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# 文档与脚本（运行不需要）
+*.md
+start.bat
+
+# OS
+.DS_Store
+Thumbs.db
+*.log

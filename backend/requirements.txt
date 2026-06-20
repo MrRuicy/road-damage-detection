@@ -1,0 +1,30 @@
+# FastAPI 及相关依赖
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
+pydantic==2.10.1
+pydantic-settings==2.6.1
+
+# YOLO 和 CV
+ultralytics>=8.0.20
+opencv-python-headless>=4.5.5
+pillow>=9.5.0
+numpy>=1.22.0
+
+# 系统监控
+psutil>=5.9.0
+gputil>=1.4.0
+
+# PDF 生成
+reportlab>=3.6.0
+
+# 数据库
+sqlalchemy>=2.0.0
+aiosqlite>=0.20.0
+
+# Excel 导出
+openpyxl>=3.1.0
+
+# 其他工具
+python-dotenv==1.0.1
+aiofiles==24.1.0

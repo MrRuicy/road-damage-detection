@@ -1,0 +1,58 @@
+:root {
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--el-text-color-primary);
+  background-color: var(--el-bg-color-page);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+#app {
+  width: 100%;
+  height: 100vh;
+}
+
+/* 页面标题在所有视图中复用，统一走主题变量以适配暗色 */
+.page-header h1 {
+  color: var(--el-text-color-primary) !important;
+}
+
+.page-header p {
+  color: var(--el-text-color-secondary) !important;
+}
+
+/* 视图内常见的纯白卡片背景，暗色下交由 Element 变量接管 */
+.stat-value {
+  color: var(--el-text-color-primary) !important;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--el-border-color-darker);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--el-text-color-secondary);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}

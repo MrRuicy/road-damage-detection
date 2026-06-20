@@ -1,0 +1,22 @@
+# 本地测试用编排文件
+# 用法：docker compose up --build
+# 访问：http://localhost:8000
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: road-damage-detection:latest
+    container_name: road-damage-detection
+    ports:
+      # 宿主机 8000 → 容器 7860（与开发模式后端端口一致，便于记忆）
+      - "8000:7860"
+    environment:
+      - DEBUG=false
+      - HOST=0.0.0.0
+      - PORT=7860
+    volumes:
+      # 持久化数据库与检测结果（容器重启不丢数据）
+      - ./data/db:/app/backend/data
+      - ./data/results:/app/backend/static/results
+    restart: unless-stopped
