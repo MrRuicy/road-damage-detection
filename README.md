@@ -34,8 +34,9 @@ app_port: 7860
 
 ### 后端
 - **FastAPI** - 高性能异步 Web 框架
-- **Ultralytics YOLO11** - 目标检测模型
-- **OpenCV** - 图像处理
+- **Ultralytics YOLO11** - 目标检测 + ByteTrack 视频追踪
+- **ONNX Runtime** - 高精确模型推理
+- **OpenCV / ffmpeg** - 图像处理与视频 H.264 转码
 - **PyTorch** - 深度学习框架
 - **SQLAlchemy + SQLite** - 检测记录持久化（异步）
 - **ReportLab / openpyxl** - PDF 报告 / Excel 导出
@@ -85,12 +86,13 @@ road-damage-detection/
 │   │   ├── detection_service.py  # 检测 + 加权严重度算法
 │   │   ├── record_service.py     # 记录持久化
 │   │   ├── stats_service.py      # 统计聚合
-│   │   ├── video_service.py      # 视频逐帧处理
+│   │   ├── video_service.py      # 视频追踪检测 + H.264 转码
 │   │   ├── task_manager.py       # 异步任务管理
 │   │   └── export_service.py     # 报告导出
 │   ├── utils/                 # 工具函数
+│   ├── weights/               # 模型权重（高召回 .pt / 高精确 .onnx）
 │   ├── static/results/        # 结果图/视频（运行时生成）
-│   ├── road_damage.db         # SQLite 数据库（运行时生成）
+│   ├── data/                  # SQLite 数据库（运行时生成，可挂载持久化）
 │   ├── main.py                # 应用入口
 │   ├── run.py                 # 启动脚本
 │   └── requirements.txt       # 后端依赖
@@ -107,6 +109,7 @@ road-damage-detection/
 │   ├── package.json
 │   └── vite.config.ts
 │
+├── scripts/                    # 工具脚本（如生成测试视频）
 ├── dataset/                    # YOLO 训练/评估数据集（不入库）
 ├── Dockerfile                  # 容器镜像构建脚本
 ├── docker-compose.yml          # 本地 Docker 编排
@@ -160,23 +163,24 @@ npm run dev
 
 - **前端界面**：http://localhost:5173  ← 开发时访问这个地址
 - 后端 API 文档：http://localhost:8000/docs
-- API 文档：http://localhost:8000/docs
 
 ## 功能特性
 
 | 模块 | 功能 | 状态 |
 |------|------|------|
 | 仪表板 | 真实数据总览、ECharts 趋势/类型/严重度图表、系统状态监控 | ✅ |
-| 图像检测 | 单张/批量检测、参数配置、原图-结果图对比展示、结果入库 | ✅ |
-| 视频检测 | 异步后台逐帧检测、实时进度条、结果视频在线播放 | ✅ |
-| 实时检测 | 浏览器摄像头 + WebSocket 实时推理、累计统计 | ✅ |
+| 图像检测 | 单张/批量检测、参数配置、原图-结果图对比展示、智能去重入库 | ✅ |
+| 视频检测 | 异步后台检测、ByteTrack 追踪去重计数、H.264 在线播放 | ✅ |
+| 实时检测 | 浏览器摄像头 + WebSocket 实时推理、峰值统计 | ✅ |
 | 检测历史 | 分页/筛选/详情抽屉/删除、PDF & Excel 导出 | ✅ |
 | 系统设置 | 模型切换、暗色模式 | ✅ |
+| 响应式 | 桌面端侧边栏常驻、移动端折叠菜单适配 | ✅ |
 
 ### 核心优化（相比 v1 Streamlit 版）
 
 - **数据持久化**：所有检测结果入库（SQLite），支持历史回溯与趋势分析
 - **加权严重度算法**：综合病害类型权重、置信度、检测框面积占比，输出 0~100 连续指数，比"只数个数"更科学
+- **视频追踪去重**：ByteTrack 按目标 ID 跨帧去重，同一病害（静止重复或移动先后出现）只计 1 次，避免逐帧累加虚高
 - **异步视频处理**：长任务后台执行 + 进度轮询，界面不阻塞
 - **浏览器摄像头方案**：实时检测不依赖服务器硬件，远程访问也可用
 - **结果图存储策略**：单张内联 base64（体验流畅），批量/视频存磁盘返回 URL（避免响应体臃肿）
@@ -238,6 +242,8 @@ npm run dev
 - [x] PDF 报告 / Excel 导出
 - [x] 暗色模式
 - [x] 双模型分级（高召回 / 高精确）
+- [x] 视频追踪去重计数（ByteTrack）
+- [x] 移动端响应式适配（侧边栏折叠）
 - [x] Docker 容器化部署（单端口，支持 ModelScope 创空间）
 - [ ] 用户认证与权限管理（按需）
 

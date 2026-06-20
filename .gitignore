@@ -43,6 +43,9 @@ backend/.env
 dataset/
 # Ultralytics 评估/训练输出
 runs/
+# 测试视频（脚本 scripts/make_test_video.py 可随时重新生成）
+sample_road_damage.mp4
+*.sample.mp4
 
 # ============ 文档草稿 ============
 # 本地文档/草稿目录，不纳入版本控制
