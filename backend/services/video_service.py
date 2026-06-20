@@ -6,6 +6,8 @@
 import os
 import time
 import uuid
+import shutil
+import subprocess
 from datetime import datetime
 from typing import Optional
 
@@ -15,6 +17,39 @@ from core.config import settings
 from models.yolo_model import model_manager
 from services.detection_service import detection_service
 from services.task_manager import task_manager, TaskStatus
+
+
+def _transcode_to_h264(src_path: str) -> bool:
+    """
+    用 ffmpeg 将视频转码为浏览器可直接播放的 H.264 (yuv420p)。
+    成功则原地替换 src_path，返回 True；ffmpeg 不存在或失败返回 False（保留原文件）。
+    """
+    if shutil.which("ffmpeg") is None:
+        return False
+    tmp_out = src_path + ".h264.mp4"
+    try:
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-i", src_path,
+                "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart",  # web 播放优化：moov 前置
+                "-preset", "veryfast",
+                tmp_out,
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=300,
+        )
+        os.replace(tmp_out, src_path)
+        return True
+    except Exception:
+        if os.path.exists(tmp_out):
+            try:
+                os.remove(tmp_out)
+            except OSError:
+                pass
+        return False
 
 
 class VideoService:
@@ -63,7 +98,8 @@ class VideoService:
             model = model_manager.get_model(model_name)
 
             total_class_counts: dict = {}
-            all_boxes: list = []
+            peak_boxes: list = []  # 病害数最多那一帧的检测框（作为严重度代表帧）
+            peak_frame_damages = -1
             frame_idx = 0
             processed = 0
             start = time.time()
@@ -91,11 +127,17 @@ class VideoService:
                 last_plotted = plotted
                 writer.write(plotted)
 
-                # 统计
+                # 统计：每类病害取「单帧最大值」（峰值），避免同一病害逐帧累加
                 counts = detection_service.analyze_results(results)
                 for k, v in counts.items():
-                    total_class_counts[k] = total_class_counts.get(k, 0) + v
-                all_boxes.extend(detection_service.extract_boxes(results))
+                    total_class_counts[k] = max(total_class_counts.get(k, 0), v)
+
+                # 记录病害最多的那一帧的检测框，作为严重度评估的代表帧
+                frame_boxes = detection_service.extract_boxes(results)
+                frame_damages = len(frame_boxes)
+                if frame_damages > peak_frame_damages:
+                    peak_frame_damages = frame_damages
+                    peak_boxes = frame_boxes
 
                 processed += 1
                 if total_frames > 0:
@@ -110,8 +152,12 @@ class VideoService:
             cap.release()
             writer.release()
 
+            # 转码为 H.264，让浏览器可直接在线播放（ffmpeg 不可用时降级保留 mp4v）
+            task_manager.update(task_id, message="正在转码输出视频...")
+            _transcode_to_h264(out_path)
+
             processing_time = time.time() - start
-            severity_score = detection_service.compute_severity_score(all_boxes)
+            severity_score = detection_service.compute_severity_score(peak_boxes)
             severity = detection_service.severity_from_score(severity_score)
             total_damages = sum(total_class_counts.values())
 

@@ -79,9 +79,9 @@ async def realtime_detection(websocket: WebSocket):
             plotted = detection_service.plot_result(results)
             result_image = encode_image_to_base64(plotted)
 
-            # 累计统计
+            # 累计统计：每类病害取「单帧最大值」（峰值），避免同一病害逐帧累加刷高
             for k, v in class_counts.items():
-                cumulative_counts[k] = cumulative_counts.get(k, 0) + v
+                cumulative_counts[k] = max(cumulative_counts.get(k, 0), v)
 
             # 瞬时 FPS
             frame_count += 1

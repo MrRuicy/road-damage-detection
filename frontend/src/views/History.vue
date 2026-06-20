@@ -200,8 +200,15 @@ onMounted(load)
     <!-- 详情抽屉 -->
     <el-drawer v-model="detailVisible" title="检测详情" size="480px">
       <div v-if="current" class="detail">
+        <!-- 视频记录用 video 播放，图片记录用 el-image 预览 -->
+        <video
+          v-if="current.detection_type === 'video' && current.result_image_path"
+          :src="current.result_image_path"
+          controls
+          class="detail-video"
+        />
         <el-image
-          v-if="current.result_image_path"
+          v-else-if="current.result_image_path"
           :src="current.result_image_path"
           fit="contain"
           class="detail-img"
@@ -288,6 +295,14 @@ onMounted(load)
   border-radius: 8px;
   border: 1px solid #ebeef5;
   background: #f5f7fa;
+  margin-bottom: 16px;
+}
+
+.detail-video {
+  width: 100%;
+  max-height: 320px;
+  border-radius: 8px;
+  background: #000;
   margin-bottom: 16px;
 }
 

@@ -20,10 +20,11 @@ RUN npm run build
 # ---------- 阶段2：后端运行 ----------
 FROM python:3.10-slim
 
-# OpenCV / ultralytics 运行所需系统库
+# OpenCV / ultralytics 运行所需系统库 + ffmpeg（视频转码 H.264）
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libgl1 \
         libglib2.0-0 \
+        ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
