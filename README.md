@@ -1,3 +1,12 @@
+---
+title: 道路病害检测系统
+emoji: 🛣️
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+---
+
 # 道路病害检测系统 v2.0
 
 基于 **YOLO11 + FastAPI + Vue 3** 的现代化道路病害检测系统。
@@ -90,7 +99,6 @@ road-damage-detection/
 ├── dataset/                    # YOLO 训练/评估数据集（不入库）
 ├── Dockerfile                  # 容器镜像构建脚本
 ├── docker-compose.yml          # 本地 Docker 编排
-├── DEPLOY.md                   # 部署文档
 └── README.md
 ```
 
@@ -224,9 +232,32 @@ npm run dev
 
 ## 部署
 
-支持容器化单端口部署（FastAPI 同时托管前端与 API），可本地 Docker 运行或部署到 ModelScope 创空间。详见 [DEPLOY.md](DEPLOY.md)。
+本项目采用**单端口容器化**方案：FastAPI 同时托管前端静态文件与 API，整个应用打包为一个镜像、监听一个端口。既可本地 Docker 运行，也可直接部署到 ModelScope 创空间。
+
+> 💡 开发模式不受影响：本地仍用两终端手动启动（后端 8000 + 前端 5173 热重载）。容器化只在 `frontend/dist` 存在时激活单端口模式，两者互不干扰。
+
+### 本地 Docker 测试
 
 ```bash
-# 本地 Docker 一键运行
-docker compose up --build   # 访问 http://localhost:8000
+docker compose up --build    # 访问 http://localhost:8000
+docker compose down          # 停止
 ```
+- 首次构建较慢（需下载 CPU 版 torch、ultralytics 等，约 10~20 分钟）
+- `docker-compose.yml` 已挂载卷持久化数据库与检测结果，容器重启不丢数据
+
+### 部署到 ModelScope 创空间
+
+创空间支持 **Docker SDK**，本仓库已就绪可直接部署：
+
+1. 登录 [ModelScope](https://www.modelscope.cn/)，创建创空间，SDK 类型选 **Docker**
+2. 将本仓库代码推送到创空间 git 仓库（`README.md` 顶部已包含创空间所需的 YAML 元信息）
+3. 创空间自动读取 `Dockerfile` 构建，完成后通过分配的 `xxx.modelscope.cn` 域名访问
+
+> 仓库根目录 `README.md` 顶部的 YAML 头（`sdk: docker`、`app_port: 7860`）即为创空间识别配置，与 `Dockerfile` 的 `EXPOSE 7860` 一致，无需额外改动。
+
+### 注意事项
+
+- **数据持久化**：创空间免费实例容器重启后数据会重置（检测历史清空），个人学习场景无妨
+- **实时检测**：浏览器摄像头 API 需安全上下文（HTTPS）；创空间提供 HTTPS 域名，可正常使用
+- **推理性能**：镜像使用 CPU 版 PyTorch（避免 2GB+ CUDA 依赖），单张图检测约 0.2~0.5s
+- **端口一致性**：如需改端口，保持 `Dockerfile` 的 `PORT`/`EXPOSE`、`README.md` 的 `app_port`、平台要求三处一致即可（本项目通过环境变量 `PORT` 控制，无需改代码）
