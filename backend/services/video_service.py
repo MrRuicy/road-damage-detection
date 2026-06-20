@@ -19,18 +19,36 @@ from services.detection_service import detection_service
 from services.task_manager import task_manager, TaskStatus
 
 
+def _find_ffmpeg() -> Optional[str]:
+    """
+    定位 ffmpeg 可执行文件：
+    1. 优先系统 PATH 中的 ffmpeg（容器内由 apt 安装）
+    2. 回退到 imageio-ffmpeg 自带的二进制（本地 pip 安装，无需系统 ffmpeg）
+    都没有则返回 None。
+    """
+    sys_ffmpeg = shutil.which("ffmpeg")
+    if sys_ffmpeg:
+        return sys_ffmpeg
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return None
+
+
 def _transcode_to_h264(src_path: str) -> bool:
     """
     用 ffmpeg 将视频转码为浏览器可直接播放的 H.264 (yuv420p)。
     成功则原地替换 src_path，返回 True；ffmpeg 不存在或失败返回 False（保留原文件）。
     """
-    if shutil.which("ffmpeg") is None:
+    ffmpeg = _find_ffmpeg()
+    if ffmpeg is None:
         return False
     tmp_out = src_path + ".h264.mp4"
     try:
         subprocess.run(
             [
-                "ffmpeg", "-y", "-i", src_path,
+                ffmpeg, "-y", "-i", src_path,
                 "-c:v", "libx264", "-pix_fmt", "yuv420p",
                 "-movflags", "+faststart",  # web 播放优化：moov 前置
                 "-preset", "veryfast",
@@ -97,7 +115,9 @@ class VideoService:
 
             model = model_manager.get_model(model_name)
 
-            total_class_counts: dict = {}
+            # 用 track_id 跨帧去重：记录每个唯一目标 ID 对应的病害类别
+            # （同一病害无论出现在多少帧、静止或移动，只算 1 个）
+            track_classes: dict = {}  # {track_id: class_name}
             peak_boxes: list = []  # 病害数最多那一帧的检测框（作为严重度代表帧）
             peak_frame_damages = -1
             frame_idx = 0
@@ -112,6 +132,8 @@ class VideoService:
                 frame_idx += 1
 
                 # 跳帧：非检测帧复用上一帧的检测画面
+                # 注意：跳帧越多，追踪关联越弱（同一病害可能被判为新目标），
+                # 追求计数准确建议 frame_skip 取小值
                 if frame_skip > 0 and (frame_idx % (frame_skip + 1) != 0):
                     writer.write(last_plotted if last_plotted is not None else frame)
                     continue
@@ -120,17 +142,24 @@ class VideoService:
                 if downscale and downscale < 1.0:
                     infer_frame = cv2.resize(frame, None, fx=downscale, fy=downscale)
 
-                results = model.predict(infer_frame, conf=conf_threshold, iou=iou_threshold, verbose=False)
+                # 用 track 追踪，persist=True 跨帧保持目标 ID（ByteTrack）
+                results = model.track(
+                    infer_frame, conf=conf_threshold, iou=iou_threshold,
+                    persist=True, verbose=False
+                )
                 plotted = results[0].plot()
                 if plotted.shape[:2] != (height, width):
                     plotted = cv2.resize(plotted, (width, height))
                 last_plotted = plotted
                 writer.write(plotted)
 
-                # 统计：每类病害取「单帧最大值」（峰值），避免同一病害逐帧累加
-                counts = detection_service.analyze_results(results)
-                for k, v in counts.items():
-                    total_class_counts[k] = max(total_class_counts.get(k, 0), v)
+                # 按 track_id 去重统计：每个唯一 ID 记录其类别（后出现的覆盖，取最新判定）
+                boxes = results[0].boxes
+                if boxes is not None and boxes.id is not None:
+                    ids = boxes.id.int().tolist()
+                    clss = boxes.cls.int().tolist()
+                    for tid, c in zip(ids, clss):
+                        track_classes[tid] = settings.CLASS_NAMES.get(c, "未知")
 
                 # 记录病害最多的那一帧的检测框，作为严重度评估的代表帧
                 frame_boxes = detection_service.extract_boxes(results)
@@ -157,6 +186,12 @@ class VideoService:
             _transcode_to_h264(out_path)
 
             processing_time = time.time() - start
+
+            # 按唯一 track_id 汇总各类病害数量（跨帧去重后的真实计数）
+            total_class_counts: dict = {}
+            for name in track_classes.values():
+                total_class_counts[name] = total_class_counts.get(name, 0) + 1
+
             severity_score = detection_service.compute_severity_score(peak_boxes)
             severity = detection_service.severity_from_score(severity_score)
             total_damages = sum(total_class_counts.values())

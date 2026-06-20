@@ -51,7 +51,7 @@ async def detect_video(
     conf_threshold: float = Form(0.5),
     iou_threshold: float = Form(0.7),
     model_name: str = Form(settings.DEFAULT_MODEL),
-    frame_skip: int = Form(2),
+    frame_skip: int = Form(1),  # 追踪需较连续帧，默认仅跳 1 帧以保证 track_id 关联准确
     downscale: float = Form(1.0),
 ):
     """

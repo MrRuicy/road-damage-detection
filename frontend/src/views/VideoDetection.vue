@@ -10,7 +10,7 @@ const config = reactive({
   confThreshold: 0.5,
   iouThreshold: 0.7,
   modelName: '',
-  frameSkip: 2,
+  frameSkip: 1,
   downscale: 1.0
 })
 

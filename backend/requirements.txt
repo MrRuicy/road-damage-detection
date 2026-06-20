@@ -15,6 +15,12 @@ numpy>=1.22.0
 onnx>=1.16.0
 onnxruntime>=1.18.0
 
+# 视频目标追踪（ByteTrack 去重计数）；缺失会触发容器内 AutoUpdate 导致卡死
+lapx>=0.5.0
+
+# 视频转码（H.264，浏览器可播放）；容器优先用系统 ffmpeg，缺失时回退此包自带二进制
+imageio-ffmpeg>=0.5.0
+
 # 系统监控
 psutil>=5.9.0
 gputil>=1.4.0
