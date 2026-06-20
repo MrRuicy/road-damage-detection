@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useThemeStore } from './stores/theme'
 
@@ -10,14 +10,66 @@ const themeStore = useThemeStore()
 // 高亮跟随当前路由，无论从菜单还是快捷操作跳转都同步
 const activeMenu = computed(() => route.path)
 
+// 移动端适配：侧边栏折叠状态
+const isCollapsed = ref(false)
+const isMobile = ref(false)
+
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth < 768
+  // 移动端默认收起侧边栏
+  if (isMobile.value && !isCollapsed.value) {
+    isCollapsed.value = true
+  }
+}
+
+onMounted(() => {
+  checkScreenSize()
+  window.addEventListener('resize', checkScreenSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkScreenSize)
+})
+
+const toggleSidebar = () => {
+  isCollapsed.value = !isCollapsed.value
+}
+
 const handleMenuSelect = (index: string) => {
   router.push(index)
+  // 移动端点击菜单后自动收起侧边栏
+  if (isMobile.value) {
+    isCollapsed.value = true
+  }
 }
 </script>
 
 <template>
   <el-container class="app-container">
-    <el-aside width="240px" class="app-aside">
+    <!-- 移动端汉堡菜单按钮（固定在右上角） -->
+    <el-button
+      v-if="isMobile"
+      class="mobile-menu-btn"
+      circle
+      @click="toggleSidebar"
+    >
+      <el-icon><component :is="isCollapsed ? 'Menu' : 'Close'" /></el-icon>
+    </el-button>
+
+    <!-- 移动端遮罩层（侧边栏展开时显示） -->
+    <transition name="fade">
+      <div
+        v-if="isMobile && !isCollapsed"
+        class="sidebar-overlay"
+        @click="toggleSidebar"
+      />
+    </transition>
+
+    <el-aside
+      :width="isCollapsed ? '0' : '240px'"
+      class="app-aside"
+      :class="{ 'is-collapsed': isCollapsed, 'is-mobile': isMobile }"
+    >
       <div class="logo">
         <el-icon :size="32"><Position /></el-icon>
         <span class="logo-text">道路病害检测</span>
@@ -79,6 +131,33 @@ const handleMenuSelect = (index: string) => {
 <style scoped>
 .app-container {
   height: 100vh;
+  position: relative;
+}
+
+/* 移动端汉堡菜单按钮 */
+.mobile-menu-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2001;
+  background: var(--el-color-primary);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-menu-btn:hover {
+  background: var(--el-color-primary-light-3);
+}
+
+/* 移动端遮罩层 */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1999;
 }
 
 .app-aside {
@@ -86,6 +165,23 @@ const handleMenuSelect = (index: string) => {
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
+  transition: width 0.3s ease, transform 0.3s ease;
+  overflow: hidden;
+}
+
+/* 移动端侧边栏：固定定位，覆盖式 */
+.app-aside.is-mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 2000;
+  width: 240px !important;
+  transform: translateX(0);
+}
+
+.app-aside.is-mobile.is-collapsed {
+  transform: translateX(-240px);
 }
 
 .logo {
@@ -111,6 +207,7 @@ const handleMenuSelect = (index: string) => {
   border: none;
   background: #001529;
   flex: 1;
+  overflow-y: auto;
 }
 
 .app-menu :deep(.el-menu-item) {
@@ -152,6 +249,13 @@ const handleMenuSelect = (index: string) => {
 .app-main {
   padding: 24px;
   overflow-y: auto;
+}
+
+/* 移动端：主区域占满全屏 */
+@media (max-width: 767px) {
+  .app-main {
+    padding: 16px;
+  }
 }
 
 .fade-enter-active,

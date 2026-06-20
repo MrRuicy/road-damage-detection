@@ -56,3 +56,72 @@ body {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ========== 移动端响应式适配 ========== */
+@media (max-width: 767px) {
+  /* 表格横向滚动，防止溢出 */
+  .el-table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  /* 卡片间距缩小 */
+  .el-card {
+    margin-bottom: 12px !important;
+  }
+
+  /* 表单项堆叠 */
+  .el-form-item {
+    margin-bottom: 16px;
+  }
+
+  /* 按钮组换行 */
+  .el-button-group,
+  .button-group {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* 统计卡片单列布局 */
+  .el-row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .el-col {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-bottom: 12px;
+  }
+
+  /* Dialog 占满屏幕 */
+  .el-dialog {
+    width: 95% !important;
+    margin-top: 5vh !important;
+  }
+
+  /* 分页器简化 */
+  .el-pagination {
+    justify-content: center;
+  }
+
+  .el-pagination .btn-prev,
+  .el-pagination .btn-next {
+    padding: 0 8px;
+  }
+
+  /* 标题字号缩小 */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  /* 图片自适应 */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}

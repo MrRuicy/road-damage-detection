@@ -15,7 +15,18 @@ app_port: 7860
 
 本系统通过深度学习目标检测模型，实现对道路图像/视频中各种病害（裂缝、坑洞等）的自动识别。采用前后端分离架构，提供优雅流畅的用户界面。
 
-![系统界面预览](dashboard-preview.png)
+### 系统界面
+
+<table>
+<tr>
+<td><img src="dashboard-preview.png" alt="仪表板" /></td>
+<td><img src="detection-preview.png" alt="检测页面" /></td>
+</tr>
+<tr>
+<td align="center">仪表板 - 统计与趋势</td>
+<td align="center">检测页面 - 实时分析</td>
+</tr>
+</table>
 
 > **v2.0 架构说明**：从 Streamlit 单体应用重构为前后端分离，支持 Docker 容器化部署。原 v1 版本已通过 git tag 归档，可回溯历史。
 
