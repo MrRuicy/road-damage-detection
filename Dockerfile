@@ -47,6 +47,8 @@ COPY --from=frontend-builder /build/dist ./frontend/dist
 ENV DEBUG=false
 ENV HOST=0.0.0.0
 ENV PORT=7860
+# ultralytics 配置目录指向可写位置（容器内 /root/.config 可能只读）
+ENV YOLO_CONFIG_DIR=/tmp/Ultralytics
 EXPOSE 7860
 
 # 以 backend 为工作目录启动（匹配 main:app 的相对导入与路径锚定）

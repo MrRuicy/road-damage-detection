@@ -11,6 +11,10 @@ opencv-python-headless>=4.5.5
 pillow>=9.5.0
 numpy>=1.22.0
 
+# ONNX 推理（高精确模型为 ONNX 格式，缺失会触发容器内 AutoUpdate 导致卡死）
+onnx>=1.16.0
+onnxruntime>=1.18.0
+
 # 系统监控
 psutil>=5.9.0
 gputil>=1.4.0
